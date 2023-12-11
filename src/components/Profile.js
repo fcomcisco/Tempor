@@ -1,75 +1,64 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../hooks/useAuth';
-import { useUser } from '../hooks/useUser';
-import { getFirestore, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
-import { getAuth, deleteUser } from 'firebase/auth';
 
 function Profile() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [city, setCity] = useState('');
-  const [userType, setUserType] = useState('');
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [curriculumUrl, setCurriculumUrl] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const { currentUser, loading } = useAuth();
-  const { getUserProfile, setUserProfile } = useUser();
+  const { userId } = useParams();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (currentUser) {
-        const userData = await getUserProfile(currentUser.uid);
-        const db = getFirestore();
-        const docRef = doc(db, 'users', currentUser.uid);
-        const docSnap = await getDoc(docRef);
+      const db = getFirestore();
+      const docRef = doc(db, 'users', userId || currentUser.uid);
+      const docSnap = await getDoc(docRef);
 
-        if (userData) {
-          setName(userData.name || '');
-          setAge(userData.age || '');
-          setCity(userData.city || '');
-        }
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        setName(userData.name || '');
+        setAge(userData.age || '');
+        setCity(userData.city || '');
+      }
 
-        if (docSnap.exists()) {
-          setUserType(docSnap.data().userType || '');
-        }
+      const storage = getStorage();
+      const profilePicRef = ref(storage, 'profile_pics/' + (userId || currentUser.uid));
+      try {
+        const profileUrl = await getDownloadURL(profilePicRef);
+        setProfilePicUrl(profileUrl);
+      } catch {
+        console.error("Error obteniendo foto de perfil");
+      }
 
-        const storage = getStorage();
-        const profilePicRef = ref(storage, 'profile_pics/' + currentUser.uid);
-        try {
-          const profileUrl = await getDownloadURL(profilePicRef);
-          setProfilePicUrl(profileUrl);
-        } catch (error) {
-          console.error("Error getting profile pic URL: ", error);
-        }
-
-        const curriculumRef = ref(storage, 'curriculum/' + currentUser.uid);
-        try {
-          const curriculumUrl = await getDownloadURL(curriculumRef);
-          setCurriculumUrl(curriculumUrl);
-        } catch (error) {
-          console.error("Error getting curriculum URL: ", error);
-        }
+      const curriculumRef = ref(storage, 'curriculum/' + (userId || currentUser.uid));
+      try {
+        const curriculumUrl = await getDownloadURL(curriculumRef);
+        setCurriculumUrl(curriculumUrl);
+      } catch {
+        console.error("Error obteniendo curriculum");
       }
     };
 
-    if (!loading) {
+    if (!loading && currentUser) {
       fetchUserProfile();
     }
-  }, [currentUser, loading, getUserProfile]);
+  }, [userId,currentUser, loading]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const userProfile = {
-      name,
-      age,
-      city,
-      userType
-    };
-    await setUserProfile(currentUser.uid, userProfile);
+    const db = getFirestore();
+    const docRef = doc(db, 'users', currentUser.uid);
+    const userData = { name, age, city };
+    await setDoc(docRef, userData, { merge: true });
     setIsEdit(false);
   };
 
@@ -84,9 +73,6 @@ function Profile() {
 
     const curriculumRef = ref(storage, 'curriculum/' + currentUser.uid);
     await deleteObject(curriculumRef);
-
-    const auth = getAuth();
-    await deleteUser(auth.currentUser);
   };
 
   const handleEdit = () => {
@@ -96,18 +82,16 @@ function Profile() {
   const handleCurriculumUpload = async (e) => {
     const storage = getStorage();
     const curriculumFile = e.target.files[0];
+    if (!curriculumFile) return;
 
-    const curriculumRef = ref(storage, `curriculum/${currentUser.uid}/${curriculumFile.name}`);
-
+    const curriculumRef = ref(storage, `curriculum/${currentUser.uid}`);
     await uploadBytes(curriculumRef, curriculumFile);
 
-    try {
-      const updatedCurriculumUrl = await getDownloadURL(curriculumRef);
-      setCurriculumUrl(updatedCurriculumUrl);
-    } catch (error) {
-      console.error("Error getting updated curriculum URL: ", error);
-    }
+    const updatedCurriculumUrl = await getDownloadURL(curriculumRef);
+    setCurriculumUrl(updatedCurriculumUrl);
   };
+
+  const isCurrentUserProfile = currentUser && userId === currentUser.uid;
 
   if (loading) {
     return <Spinner animation="border" role="status"><span className="sr-only">Loading...</span></Spinner>;
@@ -157,22 +141,31 @@ function Profile() {
                           required
                         />
                       </Form.Group>
-                      <Button type="submit">Guardar Cambios</Button>
+                      <Button variant="primary" type="submit">
+                        Guardar
+                      </Button>
                     </Form>
                   ) : (
                     <div>
                       <p>Nombre: {name}</p>
                       <p>Edad: {age}</p>
                       <p>Ciudad: {city}</p>
-                      <p>Tipo de Usuario: {userType}</p>
-                      <p>Curriculum: {curriculumUrl ? <a href={curriculumUrl} target="_blank" rel="noopener noreferrer">Ver curriculum</a> : 'Sin cargar'}</p>
-                      <input type="file" accept=".pdf" onChange={handleCurriculumUpload} />
-                      <Button onClick={handleEdit}>
-                        <FontAwesomeIcon icon={faEdit} /> Editar
-                      </Button>
-                      <Button variant="danger" onClick={handleDeleteEverything}>
-                        <FontAwesomeIcon icon={faTrashAlt} /> Borrar todo
-                      </Button>
+                      {curriculumUrl && (
+                        <div>
+                          <a href={curriculumUrl} target="_blank" rel="noopener noreferrer">Ver Curriculum</a>
+                        </div>
+                      )}
+                      {isCurrentUserProfile && (
+                        <>
+                          <input type="file" accept=".pdf" onChange={handleCurriculumUpload} />
+                          <Button onClick={handleEdit}>
+                            <FontAwesomeIcon icon={faEdit} /> Editar
+                          </Button>
+                          <Button variant="danger" onClick={handleDeleteEverything}>
+                            <FontAwesomeIcon icon={faTrashAlt} /> Borrar todo
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                 </Col>

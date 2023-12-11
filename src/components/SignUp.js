@@ -6,7 +6,18 @@ import { Button, Form, Row, Col } from 'react-bootstrap';
 import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faEnvelope, faLock, faCity, faBirthdayCake, faUserTie } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
 
+const calculateAge = (birthdate) => {
+  const today = new Date();
+  const birthDate = new Date(birthdate);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +27,7 @@ const SignUp = () => {
   const [city, setCity] = useState('');
   const [userType, setUserType] = useState('');
   const [profilePic, setProfilePic] = useState(null);
+  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,6 +38,16 @@ const SignUp = () => {
 
   const register = async (e) => {
     e.preventDefault();
+
+    if (!profilePic) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'La foto de perfil es obligatoria',
+      });
+      return;
+    }
+
     const auth = getAuth();
     const db = getFirestore();
     const storage = getStorage();
@@ -34,18 +56,17 @@ const SignUp = () => {
     try {
       userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
       const storageRef = ref(storage, 'profile_pics/' + user.uid);
       await uploadBytes(storageRef, profilePic);
-
       await setDoc(doc(db, 'users', user.uid), {
         name,
-        age,
+        age: calculateAge(age),
         city,
         userType,
         email,
       });
 
+      // Clear form fields
       setEmail('');
       setPassword('');
       setName('');
@@ -53,6 +74,13 @@ const SignUp = () => {
       setCity('');
       setUserType('');
       setProfilePic(null);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'El registro fue exitoso',
+      }).then(() => {
+        navigate('/');
+      });
 
     } catch (error) {
       Swal.fire({
@@ -79,31 +107,26 @@ const SignUp = () => {
           <Form.Control type="text" placeholder="Nombre" value={name} onChange={e => setName(e.target.value)} required />
         </Form.Group>
       </Row>
-
       <Row className="mb-3">
         <Form.Group as={Col} controlId="formBasicAge">
-          <Form.Label><FontAwesomeIcon icon={faBirthdayCake} /> Edad</Form.Label>
-          <Form.Control type="number" placeholder="Edad" value={age} onChange={e => setAge(e.target.value)} required />
+          <Form.Label><FontAwesomeIcon icon={faBirthdayCake} /> Fecha de Nacimiento</Form.Label>
+          <Form.Control type="date" placeholder="Fecha de Nacimiento" value={age} onChange={e => setAge(e.target.value)} required />
         </Form.Group>
-
         <Form.Group as={Col} controlId="formBasicCity">
           <Form.Label><FontAwesomeIcon icon={faCity} /> Ciudad</Form.Label>
           <Form.Control type="text" placeholder="Ciudad" value={city} onChange={e => setCity(e.target.value)} required />
         </Form.Group>
       </Row>
-
       <Row className="mb-3">
         <Form.Group as={Col} controlId="formBasicEmail">
           <Form.Label><FontAwesomeIcon icon={faEnvelope} /> Correo Electrónico</Form.Label>
           <Form.Control type="email" placeholder="Correo Electrónico" value={email} onChange={e => setEmail(e.target.value)} required />
         </Form.Group>
-
         <Form.Group as={Col} controlId="formBasicPassword">
           <Form.Label><FontAwesomeIcon icon={faLock} /> Contraseña</Form.Label>
           <Form.Control type="password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} required />
         </Form.Group>
       </Row>
-
       <Row className="mb-3">
         <Form.Group as={Col}>
           <Form.Label><FontAwesomeIcon icon={faUserTie} /> Tipo de Usuario</Form.Label>
@@ -111,14 +134,12 @@ const SignUp = () => {
           <Form.Check type="radio" label="Trabajador" name="userType" value="employee" onChange={e => setUserType(e.target.value)} required />
         </Form.Group>
       </Row>
-
       <Row className="mb-3">
         <Form.Group as={Col}>
           <Form.Label>Foto de Perfil</Form.Label>
-          <Form.Control type="file" onChange={handleFileChange} />
+          <Form.Control type="file" onChange={handleFileChange} required />
         </Form.Group>
       </Row>
-
       <Button variant="primary" type="submit">
         Registrarse
       </Button>

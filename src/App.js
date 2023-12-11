@@ -1,90 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { Navbar, Container, Nav, Dropdown } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import Home from './components/Home';
 import Create from './components/Create';
 import Edit from './components/Edit';
+import ShowEmployees from './components/ShowEmployees';
+import ShowEmployers from './components/ShowEmployers';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import Profile from './components/Profile';
+import NavBarEmployees from './components/NavBarEmployees';
+import NavBarEmployers from './components/NavBarEmployers';
+import Postulates from './components/Postulates';
+import Workers from './components/Workers';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 function App() {
+  const [userType, setUserType] = useState(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserType(userDoc.data().userType);
+        }
+      } else {
+        setUserType(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div className="App">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
       <Router>
-        <NavigationBar />
+        {userType === 'employer' && <NavBarEmployers />}
+        {userType === 'employee' && <NavBarEmployees />}
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/create' element={<Create />} />
           <Route path='/edit/:id' element={<Edit />} />
+          <Route path='/show-employees' element={<ShowEmployees />} />
+          <Route path='/show-employers' element={<ShowEmployers />} />
           <Route path='/signin' element={<SignIn />} />
           <Route path='/signup' element={<SignUp />} />
-          <Route path='/profile' element={<Profile />} />
+          <Route path='/profile/:userId' element={<Profile />} />
+          <Route path='/postulates/:id' element={<Postulates />} />
+          <Route path='/workers/:jobId' element={<Workers />} />
         </Routes>
+        <ToastContainer />
       </Router>
     </div>
   );
 }
-
-const NavigationBar = () => {
-  const [user, setUser] = useState(null);
-  const auth = getAuth();
-  
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      if (authUser) {
-        setUser(authUser);
-      } else {
-        setUser(null);
-      }
-    });
-
-    return unsubscribe;
-  }, [auth]);
-
-  const logout = async () => {
-    await signOut(auth);
-    window.location.href = "/";
-  };
-
-  return (
-    <Navbar style={{ backgroundColor: 'black', color: 'white' }} expand='lg'>
-      <Container>
-        <Navbar.Brand href='/' style={{ color: 'white' }}>
-          <i className="fas fa-hourglass-half mr-2"></i>
-          Tempor
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls='basic-navbar-nav' />
-        <Navbar.Collapse id='basic-navbar-nav'>
-          <Nav className='me-auto'>
-            {user && <Nav.Link href='/' style={{ color: 'white' }}>Trabajos</Nav.Link>}
-            {user && <Nav.Link href='/create' style={{ color: 'white' }}>Crear</Nav.Link>}
-            {!user ? (
-              <>
-                <Nav.Link href='/signin' style={{ color: 'white' }}>Ingresar</Nav.Link>
-                <Nav.Link href='/signup' style={{ color: 'white' }}>Registrate</Nav.Link>
-              </>
-            ) : (
-              <Dropdown>
-                <Dropdown.Toggle variant='success' id='dropdown-basic' style={{ color: 'white' }}>
-                  {user.email}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item>{user.displayName}</Dropdown.Item>
-                  <Dropdown.Item href="/profile">Ir a Perfil</Dropdown.Item>
-                  <Dropdown.Item onClick={logout}>Salir de la cuenta</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            )}
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
-  );  
-};
 
 export default App;
