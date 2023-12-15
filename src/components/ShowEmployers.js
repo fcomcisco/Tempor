@@ -77,6 +77,7 @@ const JobTable = ({ jobs, onDeleteConfirm, currentUserID }) => {
           <th>Paga</th>
           <th style={{ width: '20%' }}>Descripción</th>
           <th>Ubicación</th>
+          <th>Fechas</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -89,41 +90,59 @@ const JobTable = ({ jobs, onDeleteConfirm, currentUserID }) => {
   );
 };
 
-const JobRow = ({ job, onDeleteConfirm }) => (
-  <tr>
-    <td>{job.Empresa}</td>
-    <td>{job.Puesto}</td>
-    <td>{job.Paga}</td>
-    <td>{job.Descripcion}</td>
-    <td>
-      {job.location && (
-        <LoadScript googleMapsApiKey="AIzaSyClqNKcEXF5otj2EPI4gmifCcsQ7n4dyag">
-          <GoogleMap
-            center={job.location}
-            zoom={15}
-            mapContainerStyle={{ height: "200px", width: "300px" }}
-          >
-            <Marker position={job.location} />
-          </GoogleMap>
-        </LoadScript>
-      )}
-    </td>
-    <td>
-      <Link to={`/edit/${job.id}`} className='btn btn-light'>
-        <i className='fas fa-edit'></i> Editar
-      </Link>
-      <button onClick={() => onDeleteConfirm(job.id)} className='btn btn-danger'>
-        <i className='fas fa-trash'></i> Borrar
-      </button>
-      <Link to={`/postulates/${job.id}`} className='btn btn-info'>
-        <i className='fas fa-users'></i> Candidatos
-      </Link>
-      <Link to={`/workers/${job.id}`} className='btn btn-primary'>
-        <i className='fas fa-hard-hat'></i> Trabajadores
-      </Link>
-    </td>
-  </tr>
-);
+const JobRow = ({ job, onDeleteConfirm }) => {
+  const formatDate = (timestamp) => {
+    if (timestamp && timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString('en-GB');
+    }
+    return '';
+  };
+
+  return (
+    <tr>
+      <td>{job.Empresa}</td>
+      <td>{job.Puesto}</td>
+      <td>{job.Paga}</td>
+      <td>{job.Descripcion}</td>
+      <td>
+        {job.location && (
+          <>
+            <div>{job.location.address}</div>
+            <LoadScript googleMapsApiKey="AIzaSyClqNKcEXF5otj2EPI4gmifCcsQ7n4dyag">
+              <GoogleMap
+                center={job.location}
+                zoom={15}
+                mapContainerStyle={{ height: "200px", width: "300px" }}
+              >
+                <Marker position={job.location} />
+              </GoogleMap>
+            </LoadScript>
+          </>
+        )}
+      </td>
+      <td>
+        {job.startDate && <div>Inicio: {formatDate(job.startDate)}</div>}
+        {job.endDate && <div>Fin: {formatDate(job.endDate)}</div>}
+      </td>
+      <td>
+        <Link to={`/edit/${job.id}`} className='btn btn-light'>
+          <i className='fas fa-edit'></i> Editar
+        </Link>
+        <button onClick={() => onDeleteConfirm(job.id)} className='btn btn-danger'>
+          <i className='fas fa-trash'></i> Borrar
+        </button>
+        <Link to={`/postulates/${job.id}`} className='btn btn-info'>
+          <i className='fas fa-users'></i> Candidatos
+        </Link>
+        <Link to={`/workers/${job.id}`} className='btn btn-primary'>
+          <i className='fas fa-hard-hat'></i> Trabajadores
+        </Link>
+      </td>
+    </tr>
+  );
+};
+
 
 
 export default ShowEmployers;

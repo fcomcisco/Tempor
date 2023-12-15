@@ -58,6 +58,11 @@ const NavBarEmployees = () => {
             <Nav.Link href='/show-employees' style={{ color: 'white' }}>
               Trabajos Empleados
             </Nav.Link>
+            {user && (
+              <Nav.Link href={`/chat/${user.uid}`} style={{ color: 'white' }}>
+                Chat
+              </Nav.Link>
+            )}
             {!user ? (
               <>
                 <Nav.Link href='/signin' style={{ color: 'white' }}>

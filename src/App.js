@@ -1,8 +1,11 @@
+// Import the necessary modules
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 import Home from './components/Home';
 import Create from './components/Create';
@@ -16,8 +19,7 @@ import NavBarEmployees from './components/NavBarEmployees';
 import NavBarEmployers from './components/NavBarEmployers';
 import Postulates from './components/Postulates';
 import Workers from './components/Workers';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import Chat from './components/Chat';
 
 function App() {
   const [userType, setUserType] = useState(null);
@@ -57,6 +59,7 @@ function App() {
           <Route path='/profile/:userId' element={<Profile />} />
           <Route path='/postulates/:id' element={<Postulates />} />
           <Route path='/workers/:jobId' element={<Workers />} />
+          <Route path='/chat' element={<Chat />} /> {/* Main chat route */}
         </Routes>
         <ToastContainer />
       </Router>

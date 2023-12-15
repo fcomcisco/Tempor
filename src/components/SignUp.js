@@ -66,7 +66,6 @@ const SignUp = () => {
         email,
       });
 
-      // Clear form fields
       setEmail('');
       setPassword('');
       setName('');

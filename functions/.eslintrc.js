@@ -4,18 +4,20 @@ module.exports = {
     node: true,
   },
   parserOptions: {
-    ecmaVersion: 2018,
+    "ecmaVersion": 2018,
   },
   extends: [
-    'eslint:recommended',
-    'react-app',
+    "eslint:recommended",
+    "google",
   ],
   rules: {
-    // tus reglas personalizadas aquí
+    "no-restricted-globals": ["error", "name", "length"],
+    "prefer-arrow-callback": "error",
+    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
   },
   overrides: [
     {
-      files: ['**/*.spec.*'],
+      files: ["**/*.spec.*"],
       env: {
         mocha: true,
       },

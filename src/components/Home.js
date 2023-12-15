@@ -104,7 +104,7 @@ const Home = () => {
         {userType === null && (
           <Button href="/signup" variant="light" className="m-2">Únete Ahora</Button>
         )}
-        <Button onClick={sendTestNotificationToAllUsers} variant="primary">Send Test Notification to All</Button>
+        <Button onClick={sendTestNotificationToAllUsers} variant="primary">Enviar una notificacion de prueba</Button>
       </div>
     </Container>
   );

@@ -6,6 +6,14 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../firebaseConfig/firebase';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 
+const formatDate = (timestamp) => {
+  if (timestamp && timestamp.seconds) {
+    const date = new Date(timestamp.seconds * 1000);
+    return date.toISOString().split('T')[0]; 
+  }
+  return '';
+};
+
 const filterJobs = (jobs, filters, showNotPostulated) => {
   let filteredJobs = jobs;
   if (filters.Empresa) {
@@ -25,6 +33,12 @@ const filterJobs = (jobs, filters, showNotPostulated) => {
     const userId = auth.currentUser?.uid;
     filteredJobs = filteredJobs.filter(job => !job.interestedUsers?.includes(userId));
   }
+  if (filters.StartDate) {
+    filteredJobs = filteredJobs.filter(job => formatDate(job.startDate) === filters.StartDate);
+  }
+  if (filters.EndDate) {
+    filteredJobs = filteredJobs.filter(job => formatDate(job.endDate) === filters.EndDate);
+  }
   return filteredJobs;
 };
 
@@ -37,7 +51,9 @@ const ShowEmployees = () => {
     Empresa: '',
     Puesto: '',
     Paga: '',
-    Location: ''
+    Location: '',
+    StartDate: '',
+    EndDate: ''
   });
 
   useEffect(() => {
@@ -93,6 +109,18 @@ const ShowEmployees = () => {
                       <Form.Control type="text" placeholder="Location" name="Location" value={filters.Location} onChange={handleFilterChange} />
                     </Form.Group>
                   </Col>
+                  <Col md={3}>
+                    <Form.Group>
+                      <Form.Label>Fecha de Inicio</Form.Label>
+                      <Form.Control type="date" name="StartDate" value={filters.StartDate} onChange={handleFilterChange} />
+                    </Form.Group>
+                  </Col>
+                  <Col md={3}>
+                    <Form.Group>
+                      <Form.Label>Fecha de Fin</Form.Label>
+                      <Form.Control type="date" name="EndDate" value={filters.EndDate} onChange={handleFilterChange} />
+                    </Form.Group>
+                  </Col>
                 </Row>
               </Form>
             )}
@@ -125,6 +153,8 @@ const JobTable = React.memo(({ jobs }) => (
         <th>Paga</th>
         <th style={{ width: '20%' }}>Descripcion</th>
         <th>Ubicacion</th>
+        <th>Inicio</th>
+        <th>Fin</th>
         <th>Postular</th>
       </tr>
     </thead>
@@ -173,11 +203,16 @@ const JobRow = React.memo(({ job }) => {
       <td>{job.Descripcion}</td>
       <td>
         {job.location && (
-          <GoogleMap center={job.location} zoom={15} mapContainerStyle={{ height: '200px', width: '300px' }}>
-            <Marker position={job.location} />
-          </GoogleMap>
+          <>
+            <div>{job.location.address}</div>
+            <GoogleMap center={job.location} zoom={15} mapContainerStyle={{ height: '200px', width: '300px' }}>
+              <Marker position={job.location} />
+            </GoogleMap>
+          </>
         )}
       </td>
+      <td>{formatDate(job.startDate)}</td>
+      <td>{formatDate(job.endDate)}</td>
       <td>
         <button className='btn btn-primary' onClick={handlePostulate} disabled={isPostulated}>
           {isPostulated ? 'Ya estas postulado' : 'Postular'}

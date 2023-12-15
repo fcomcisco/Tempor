@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Navbar, Container, Nav, Dropdown } from 'react-bootstrap';
-import { collection, query, where, onSnapshot, getFirestore, updateDoc, doc , getDocs} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getFirestore, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 const NavBarEmployers = () => {
@@ -42,7 +42,7 @@ const NavBarEmployers = () => {
         read: true
       });
     });
-    setNotificationCount(0); // Reset the notification count
+    setNotificationCount(0);
   };
 
   return (
@@ -61,9 +61,14 @@ const NavBarEmployers = () => {
             <Nav.Link href='/create' style={{ color: 'white' }}>
               Crear
             </Nav.Link>
+            {user && (
+              <Nav.Link href="/chat" style={{ color: 'white' }}>
+                Chat
+              </Nav.Link>
+            )}
             {user && notificationCount > 0 && (
               <Nav.Link onClick={showNotifications} style={{ color: 'white' }}>
-                You have {notificationCount} notifications
+                tienes {notificationCount} notificaciones
               </Nav.Link>
             )}
             {!user ? (

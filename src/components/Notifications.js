@@ -38,11 +38,11 @@ const Notifications = () => {
         notifications.map((notification) => (
           <div key={notification.id} className="notification-item">
             <p>{notification.text}</p>
-            <button onClick={() => markAsRead(notification.id)}>Mark as read</button>
+            <button onClick={() => markAsRead(notification.id)}>Marcar como leido</button>
           </div>
         ))
       ) : (
-        <p>No new notifications.</p>
+        <p>No hay mas notificaciones.</p>
       )}
     </div>
   );
